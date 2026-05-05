@@ -20,13 +20,13 @@ export default function Home() {
     })
   }, [])
 
-  const { messages, handleSubmit, isLoading } = useChat({
+  const { messages, sendMessage, status } = useChat({
     api: '/api/chat',
     headers: {
       'x-llm-settings': JSON.stringify({ provider, apiKey, baseUrl, defaultModel }),
       'x-user-id': userId
     }
-  });
+  })
 
   return (
     <main className="flex h-screen flex-col items-center bg-zinc-50 dark:bg-black">
@@ -36,7 +36,6 @@ export default function Home() {
             <MessageBubble role="assistant" content="Hello! I am GlowOS. How can I assist you today?" />
           )}
           {messages.map((m) => {
-            // Handle tool calls in UI
             if (m.toolInvocations && m.toolInvocations.length > 0) {
               return m.toolInvocations.map(tool => {
                 if (tool.toolName === 'render_task_list') {
@@ -58,7 +57,6 @@ export default function Home() {
                 return null;
               })
             }
-            // Standard text message
             if (m.content) {
               return <MessageBubble key={m.id} role={m.role as any} content={m.content} />
             }
@@ -68,12 +66,12 @@ export default function Home() {
       </div>
 
       <div className="fixed bottom-0 flex w-full justify-center bg-gradient-to-t from-zinc-50 via-zinc-50 to-transparent px-4 pb-8 pt-6 dark:from-black dark:via-black">
-        <form className="w-full flex justify-center">
+        <div className="w-full flex justify-center">
           <ChatInput 
-            onSubmit={(val) => handleSubmit({ messages: [], content: val })} 
-            isLoading={isLoading} 
+            onSubmit={(val) => sendMessage({ content: val })} 
+            isLoading={status === 'submitted'} 
           />
-        </form>
+        </div>
       </div>
     </main>
   )

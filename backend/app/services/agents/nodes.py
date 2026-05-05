@@ -3,8 +3,8 @@ import os
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_openai import OpenAIEmbeddings
 from .state import AgentState
-from ..llm import get_llm
-from ..core.db import get_supabase
+from ...llm import get_llm
+from ...core.db import get_supabase
 
 class IntentClassification(BaseModel):
     intent: str = Field(description="The user intent. Must be one of: 'memory', 'productivity', 'external', 'chat'")
@@ -13,7 +13,6 @@ def router_node(state: AgentState):
     llm = get_llm(state.get("settings"))
     last_message = state["messages"][-1].content
     
-    # Classify Intent
     prompt = f"""Classify the following user message into one of four intents:
 1. 'memory': User is stating a personal fact or asking to remember/recall something about themselves.
 2. 'productivity': User is asking to create a task, note, or list.
@@ -30,36 +29,7 @@ Message: {last_message}
     except Exception:
         intent = "chat"
         
-    # Inject Context via pgvector RAG
-    user_id = state.get("user_id")
-    supabase = get_supabase()
-    context_msgs = list(state["messages"])
-    
-    if user_id and supabase:
-        try:
-            embeddings = OpenAIEmbeddings(
-                api_key=state.get("settings", {}).get("apiKey") or os.getenv("OPENAI_API_KEY", "dummy"),
-                base_url=state.get("settings", {}).get("baseUrl") or os.getenv("OPENAI_BASE_URL")
-            )
-            vector = embeddings.embed_query(last_message)
-            
-            # RPC match_memories
-            response = supabase.rpc('match_memories', {
-                'query_embedding': vector,
-                'match_threshold': 0.7,
-                'match_count': 3,
-                'p_user_id': user_id
-            }).execute()
-            
-            if response.data:
-                facts = [row['content'] for row in response.data]
-                fact_str = "\n".join(facts)
-                context_msg = SystemMessage(content=f"Relevant facts about the user:\n{fact_str}")
-                context_msgs = [context_msg] + context_msgs
-        except Exception as e:
-            pass # Fail gracefully if pgvector is missing
-            
-    return {"intent": intent, "messages": context_msgs}
+    return {"intent": intent}
 
 def memory_node(state: AgentState):
     last_message = state["messages"][-1].content
