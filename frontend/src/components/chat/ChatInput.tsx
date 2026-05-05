@@ -9,6 +9,7 @@ interface ChatInputProps {
 
 export function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
   const [value, setValue] = useState("")
+  return (
     <div className="relative flex w-full max-w-3xl items-center pb-4 pt-2">
       <div className="relative flex w-full flex-row items-end overflow-hidden rounded-3xl border border-zinc-200 bg-white/50 px-4 py-3 shadow-sm backdrop-blur-md transition-all focus-within:border-zinc-300 focus-within:ring-4 focus-within:ring-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/50 dark:focus-within:border-zinc-700 dark:focus-within:ring-zinc-800/50">
         <textarea
