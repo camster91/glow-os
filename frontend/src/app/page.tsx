@@ -20,7 +20,7 @@ export default function Home() {
     })
   }, [])
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
     headers: {
       'x-llm-settings': JSON.stringify({ provider, apiKey, baseUrl, defaultModel }),
@@ -68,11 +68,9 @@ export default function Home() {
       </div>
 
       <div className="fixed bottom-0 flex w-full justify-center bg-gradient-to-t from-zinc-50 via-zinc-50 to-transparent px-4 pb-8 pt-6 dark:from-black dark:via-black">
-        <form onSubmit={handleSubmit} className="w-full flex justify-center">
+        <form className="w-full flex justify-center">
           <ChatInput 
-            value={input} 
-            onChange={(val) => handleInputChange({ target: { value: val } } as any)} 
-            onSubmit={() => handleSubmit()} 
+            onSubmit={(val) => handleSubmit({ messages: [], content: val })} 
             isLoading={isLoading} 
           />
         </form>
