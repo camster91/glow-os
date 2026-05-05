@@ -1,0 +1,82 @@
+"use client"
+
+import { useChat } from "@ai-sdk/react"
+import { ChatInput } from "@/components/chat/ChatInput"
+import { MessageBubble } from "@/components/chat/MessageBubble"
+import { TaskList } from "@/components/widgets/TaskList"
+import { NoteCard } from "@/components/widgets/NoteCard"
+import { useSettingsStore } from "@/store/settings"
+import { createClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react"
+
+export default function Home() {
+  const { provider, apiKey, baseUrl, defaultModel } = useSettingsStore()
+  const [userId, setUserId] = useState<string>('anonymous')
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id)
+    })
+  }, [])
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: '/api/chat',
+    headers: {
+      'x-llm-settings': JSON.stringify({ provider, apiKey, baseUrl, defaultModel }),
+      'x-user-id': userId
+    }
+  });
+
+  return (
+    <main className="flex h-screen flex-col items-center bg-zinc-50 dark:bg-black">
+      <div className="flex w-full flex-1 flex-col items-center overflow-y-auto px-4 pb-32 pt-8">
+        <div className="flex w-full max-w-3xl flex-col">
+          {messages.length === 0 && (
+            <MessageBubble role="assistant" content="Hello! I am GlowOS. How can I assist you today?" />
+          )}
+          {messages.map((m) => {
+            // Handle tool calls in UI
+            if (m.toolInvocations && m.toolInvocations.length > 0) {
+              return m.toolInvocations.map(tool => {
+                if (tool.toolName === 'render_task_list') {
+                  const args = tool.args as { tasks: string[] }
+                  return (
+                    <div key={tool.toolCallId} className="w-full max-w-3xl flex justify-start ml-12">
+                      <TaskList tasks={args.tasks || []} />
+                    </div>
+                  )
+                }
+                if (tool.toolName === 'render_note') {
+                  const args = tool.args as { title: string, content: string }
+                  return (
+                    <div key={tool.toolCallId} className="w-full max-w-3xl flex justify-start ml-12">
+                      <NoteCard title={args.title || "Note"} content={args.content || ""} />
+                    </div>
+                  )
+                }
+                return null;
+              })
+            }
+            // Standard text message
+            if (m.content) {
+              return <MessageBubble key={m.id} role={m.role as any} content={m.content} />
+            }
+            return null;
+          })}
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 flex w-full justify-center bg-gradient-to-t from-zinc-50 via-zinc-50 to-transparent px-4 pb-8 pt-6 dark:from-black dark:via-black">
+        <form onSubmit={handleSubmit} className="w-full flex justify-center">
+          <ChatInput 
+            value={input} 
+            onChange={(val) => handleInputChange({ target: { value: val } } as any)} 
+            onSubmit={() => handleSubmit()} 
+            isLoading={isLoading} 
+          />
+        </form>
+      </div>
+    </main>
+  )
+}
