@@ -23,7 +23,6 @@ export async function POST(req: Request) {
       headers: { 
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
-        "x-user-id": user.id,
         "x-llm-settings": llmSettings
       },
       body: JSON.stringify({ messages }),

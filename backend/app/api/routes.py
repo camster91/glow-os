@@ -5,7 +5,6 @@ import json
 import httpx
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 from ..services.agents.graph import graph
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from ..core.db import get_supabase
@@ -69,10 +68,6 @@ async def chat_endpoint(
     if authorization and authorization.startswith("Bearer "):
         token = authorization[7:]
     
-    # Also accept x-user-id from trusted frontend (after its JWT check)
-    # But verify it came from a valid session
-    untrusted_user_id = request.headers.get("x-user-id")
-    
     # Verify the token and get the authenticated user
     user_payload = await verify_supabase_token(token)
     
@@ -117,17 +112,6 @@ async def chat_endpoint(
             lc_messages.append(AIMessage(content=m.content))
         else:
             lc_messages.append(SystemMessage(content=m.content))
-            
-    # Save User message
-    supabase = get_supabase()
-    if supabase and verified_user_id and payload.messages:
-        last_m = payload.messages[-1]
-        if last_m.role == "user":
-            try:
-                # In full prod, we map to actual session_id
-                pass
-            except Exception:
-                pass
             
     # Invoke LangGraph
     final_state = graph.invoke({
