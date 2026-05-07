@@ -17,9 +17,18 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Allow frontend to access the API
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+cors_origins = [origin.strip() for origin in cors_origins]
+
+# Security: reject wildcard "*" when credentials are enabled (browser requirement)
+if "*" in cors_origins:
+    raise ValueError(
+        "CORS_ORIGINS contains '*' which is incompatible with allow_credentials=True. "
+        "Either remove '*' from CORS_ORIGINS or set allow_credentials=False."
+    )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in cors_origins],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
