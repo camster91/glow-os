@@ -7,16 +7,15 @@ import { TaskList } from "@/components/widgets/TaskList"
 import { NoteCard } from "@/components/widgets/NoteCard"
 import { useSettingsStore } from "@/store/settings"
 import { createClient } from "@/lib/supabase/client"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 export default function Home() {
   const { provider, apiKey, baseUrl, defaultModel } = useSettingsStore()
-  const [userId, setUserId] = useState<string>('anonymous')
   const supabase = createClient()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id)
+      if (data.user) console.log("User:", data.user.id)
     })
   }, [])
 
@@ -24,7 +23,6 @@ export default function Home() {
     api: '/api/chat',
     headers: {
       'x-llm-settings': JSON.stringify({ provider, apiKey, baseUrl, defaultModel }),
-      'x-user-id': userId
     }
   })
 

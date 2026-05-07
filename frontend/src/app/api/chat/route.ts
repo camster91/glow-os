@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
+import { getUserFromSession } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
+  // Server-side JWT verification
+  const user = await getUserFromSession();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Get the session access token to pass to backend for verification
+  const supabase = await import("@/lib/supabase/server").then(m => m.createServerSupabaseClient());
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token || "";
+
   const { messages } = await req.json();
-  const userId = req.headers.get("x-user-id") || "";
   const llmSettings = req.headers.get("x-llm-settings") || "{}";
 
   try {
@@ -11,7 +22,8 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "x-user-id": userId,
+        "Authorization": `Bearer ${accessToken}`,
+        "x-user-id": user.id,
         "x-llm-settings": llmSettings
       },
       body: JSON.stringify({ messages }),
