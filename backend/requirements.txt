@@ -9,3 +9,4 @@ langchain-core
 pinecone-client
 requests
 httpx
+slowapi

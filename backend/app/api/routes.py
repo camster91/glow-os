@@ -3,10 +3,17 @@ from pydantic import BaseModel
 from typing import List, Optional
 import json
 import httpx
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from ..services.agents.graph import graph
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from ..core.db import get_supabase
 from ..core.config import settings
+
+# Separate limiters for different endpoint groups
+chat_limiter = Limiter(key_func=get_remote_address)
+auth_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
@@ -48,12 +55,13 @@ async def verify_supabase_token(token: str) -> dict | None:
         return None
 
 @router.post("/chat")
+@chat_limiter.limit("20/minute")
 async def chat_endpoint(
     request: Request, 
     payload: ChatPayload,
     authorization: Optional[str] = Header(None)
 ):
-    """Chat endpoint with JWT verification."""
+    """Chat endpoint with JWT verification. Rate limited to 20 req/min."""
     # Extract token from Authorization header
     token = None
     if authorization and authorization.startswith("Bearer "):
@@ -121,3 +129,36 @@ async def chat_endpoint(
         response_data["tool_calls"] = last_msg.additional_kwargs["tool_calls"]
         
     return response_data
+
+
+# Auth endpoints - rate limited to 10 req/min
+# These are placeholder endpoints for future Supabase auth integration
+# Currently Supabase handles auth directly on the client side
+
+class AuthPayload(BaseModel):
+    email: str
+    password: str
+
+@router.post("/auth/login")
+@auth_limiter.limit("10/minute")
+async def auth_login(request: Request, payload: AuthPayload):
+    """Login endpoint. Rate limited to 10 req/min.
+    Note: For Supabase auth, this would typically proxy to Supabase.
+    """
+    raise HTTPException(status_code=501, detail="Auth proxied through Supabase SDK")
+
+
+@router.post("/auth/signup")
+@auth_limiter.limit("10/minute")
+async def auth_signup(request: Request, payload: AuthPayload):
+    """Signup endpoint. Rate limited to 10 req/min.
+    Note: For Supabase auth, this would typically proxy to Supabase.
+    """
+    raise HTTPException(status_code=501, detail="Auth proxied through Supabase SDK")
+
+
+@router.post("/auth/logout")
+@auth_limiter.limit("10/minute")
+async def auth_logout(request: Request):
+    """Logout endpoint. Rate limited to 10 req/min."""
+    return {"message": "Logged out"}
