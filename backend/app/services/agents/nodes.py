@@ -1,11 +1,14 @@
 from pydantic import BaseModel, Field
 import os
 import uuid
+import logging
 from langchain_core.messages import AIMessage
 from langchain_openai import OpenAIEmbeddings
 from .state import AgentState
 from ...llm import get_llm
 from ...core.db import get_supabase
+
+logger = logging.getLogger(__name__)
 
 class IntentClassification(BaseModel):
     intent: str = Field(description="The user intent. Must be one of: 'memory', 'productivity', 'external', 'chat'")
@@ -27,9 +30,10 @@ Message: {last_message}
         structured_llm = llm.with_structured_output(IntentClassification)
         result = structured_llm.invoke(prompt)
         intent = result.intent
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to classify intent, defaulting to 'chat': {e}")
         intent = "chat"
-        
+
     return {"intent": intent}
 
 def memory_node(state: AgentState):
@@ -43,15 +47,17 @@ def memory_node(state: AgentState):
             base_url=state.get("settings", {}).get("baseUrl") or os.getenv("OPENAI_BASE_URL")
         )
         vector = embeddings.embed_query(last_message)
-        
+
         if supabase and user_id:
             supabase.table("memories").insert({
                 "user_id": user_id,
                 "content": last_message,
                 "embedding": vector
             }).execute()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Failed to store memory for user {user_id}: {e}")
+        response = AIMessage(content="I had trouble saving that to my memory. Please try again.")
+        return {"messages": [response]}
 
     response = AIMessage(content="I've noted that fact in my memory system.")
     return {"messages": [response]}
@@ -224,18 +230,26 @@ def mcp_node(state: AgentState):
     llm = get_llm(state.get("settings"))
     import httpx
     try:
-        response = httpx.get("http://127.0.0.1:8000/api/mcp/calendar/tools")
+        response = httpx.get("http://127.0.0.1:8000/api/mcp/calendar/tools", timeout=10.0)
         if response.status_code == 200:
             tools = response.json().get("tools", [])
         else:
+            logger.warning(f"MCP calendar returned status {response.status_code}")
             tools = []
-    except Exception:
+    except httpx.TimeoutException:
+        logger.warning("MCP calendar server timed out")
         tools = []
-    
+    except httpx.RequestError as e:
+        logger.warning(f"Failed to connect to MCP calendar server: {e}")
+        tools = []
+    except Exception as e:
+        logger.error(f"Unexpected error fetching MCP calendar tools: {e}")
+        tools = []
+
     if tools:
         llm_with_tools = llm.bind_tools(tools)
         response = llm_with_tools.invoke(state["messages"])
     else:
         response = llm.invoke(state["messages"])
-        
+
     return {"messages": [response]}
