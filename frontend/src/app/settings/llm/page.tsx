@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useSettingsStore } from "@/store/settings"
 import { createClient } from "@/lib/supabase/client"
 import { Save } from "lucide-react"
+import { toast } from "sonner"
 
 export default function LLMSettings() {
   const { provider, apiKey, baseUrl, defaultModel, setSettings, setApiKey } = useSettingsStore()

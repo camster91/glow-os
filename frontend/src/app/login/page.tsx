@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -17,7 +18,7 @@ export default function Login() {
     if (!error) {
       router.push("/")
     } else {
-      alert(error.message)
+      toast.error(error.message)
     }
     setLoading(false)
   }
@@ -27,9 +28,9 @@ export default function Login() {
     setLoading(true)
     const { error } = await supabase.auth.signUp({ email, password })
     if (!error) {
-      alert("Check your email for the confirmation link!")
+      toast.success("Check your email for the confirmation link!")
     } else {
-      alert(error.message)
+      toast.error(error.message)
     }
     setLoading(false)
   }
