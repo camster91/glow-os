@@ -22,7 +22,7 @@ export default function Home() {
   const { messages, sendMessage, status } = useChat({
     api: '/api/chat',
     headers: {
-      'x-llm-settings': JSON.stringify({ provider, apiKey, baseUrl, defaultModel }),
+      'x-llm-settings': JSON.stringify({ provider, baseUrl, defaultModel }),
     }
   })
 
