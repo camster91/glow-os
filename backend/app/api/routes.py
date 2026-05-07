@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, Header
+from fastapi import APIRouter, Request, HTTPException, Header, Response
 from pydantic import BaseModel
 from typing import List, Optional
 import json
@@ -10,10 +10,12 @@ from ..services.agents.graph import graph
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from ..core.db import get_supabase
 from ..core.config import settings
+from ..core.crypto import get_crypto
 
 # Separate limiters for different endpoint groups
 chat_limiter = Limiter(key_func=get_remote_address)
 auth_limiter = Limiter(key_func=get_remote_address)
+settings_limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
@@ -83,12 +85,29 @@ async def chat_endpoint(
     if not verified_user_id:
         raise HTTPException(status_code=401, detail="Could not verify user identity")
     
-    settings_str = request.headers.get("x-llm-settings", "{}")
-    
-    try:
-        llm_settings = json.loads(settings_str)
-    except:
-        llm_settings = {}
+    # ── Fetch LLM settings server-side (API key encrypted at rest in Supabase) ──
+    supabase = get_supabase()
+    llm_settings = {}
+    if supabase:
+        try:
+            prefs = await _get_user_preferences(supabase, verified_user_id)
+            if prefs:
+                llm_settings = prefs
+        except Exception as e:
+            print(f"Failed to fetch LLM preferences: {e}")
+            # Fall back to header-supplied settings if DB fetch fails
+            settings_str = request.headers.get("x-llm-settings", "{}")
+            try:
+                llm_settings = json.loads(settings_str)
+            except Exception:
+                llm_settings = {}
+    else:
+        # No DB — fall back to header-supplied settings (for local dev without Supabase)
+        settings_str = request.headers.get("x-llm-settings", "{}")
+        try:
+            llm_settings = json.loads(settings_str)
+        except Exception:
+            llm_settings = {}
         
     lc_messages = []
     for m in payload.messages:
@@ -162,3 +181,114 @@ async def auth_signup(request: Request, payload: AuthPayload):
 async def auth_logout(request: Request):
     """Logout endpoint. Rate limited to 10 req/min."""
     return {"message": "Logged out"}
+
+
+# ─── LLM Settings (API key stored encrypted, never in browser) ───────────────
+
+class LLMProviderSettings(BaseModel):
+    provider: str
+    base_url: str
+    default_model: str
+
+
+async def _get_user_preferences(supabase_client, user_id: str) -> Optional[dict]:
+    """Fetch decrypted preferences for a user."""
+    result = supabase_client.table("llm_preferences").select("*").eq("user_id", user_id).execute()
+    if not result.data:
+        return None
+    row = result.data[0]
+    # Decrypt the stored API key
+    crypto = get_crypto()
+    api_key = ""
+    if row.get("api_key"):
+        try:
+            api_key = crypto.decrypt(row["api_key"])
+        except Exception:
+            api_key = ""
+    return {
+        "provider": row.get("provider", "openai"),
+        "base_url": row.get("base_url", "https://api.openai.com/v1"),
+        "default_model": row.get("default_model", "gpt-4o-mini"),
+        "api_key": api_key,
+    }
+
+
+@router.get("/settings/llm")
+@settings_limiter.limit("30/minute")
+async def get_llm_settings(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Return LLM settings (provider, base_url, default_model, api_key).
+    The API key is decrypted server-side and sent over an HttpOnly cookie.
+    """
+    token = authorization[7:] if authorization and authorization.startswith("Bearer ") else None
+    user_payload = await verify_supabase_token(token)
+    if not user_payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    verified_user_id = user_payload.get("id") or user_payload.get("sub")
+    if not verified_user_id:
+        raise HTTPException(status_code=401, detail="Could not verify user identity")
+
+    supabase = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    prefs = await _get_user_preferences(supabase, verified_user_id)
+
+    response = Response(
+        json.dumps(prefs or {"provider": "openai", "base_url": "https://api.openai.com/v1", "default_model": "gpt-4o-mini", "api_key": ""}),
+        media_type="application/json",
+    )
+    return response
+
+
+class SaveLLMSettingsPayload(BaseModel):
+    provider: str
+    api_key: str
+    base_url: str
+    default_model: str
+
+
+@router.post("/settings/llm")
+@settings_limiter.limit("20/minute")
+async def save_llm_settings(
+    request: Request,
+    payload: SaveLLMSettingsPayload,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Save LLM settings. The API key is encrypted with AES-256-GCM before
+    being stored in Supabase — it never touches localStorage or the browser
+    in plaintext.
+    """
+    token = authorization[7:] if authorization and authorization.startswith("Bearer ") else None
+    user_payload = await verify_supabase_token(token)
+    if not user_payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    verified_user_id = user_payload.get("id") or user_payload.get("sub")
+    if not verified_user_id:
+        raise HTTPException(status_code=401, detail="Could not verify user identity")
+
+    supabase = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    crypto = get_crypto()
+    encrypted_key = crypto.encrypt(payload.api_key) if payload.api_key else ""
+
+    data = {
+        "user_id": verified_user_id,
+        "provider": payload.provider,
+        "api_key": encrypted_key,
+        "base_url": payload.base_url,
+        "default_model": payload.default_model,
+    }
+
+    # Upsert: update existing or insert new
+    supabase.table("llm_preferences").upsert(data, on_conflict="user_id").execute()
+
+    return {"message": "Settings saved"}

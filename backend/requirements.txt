@@ -10,3 +10,4 @@ pinecone-client
 requests
 httpx
 slowapi
+cryptography
