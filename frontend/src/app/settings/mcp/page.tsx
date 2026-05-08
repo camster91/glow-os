@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Plus, Server, Trash2, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -19,11 +19,7 @@ export default function MCPRegistry() {
   const [saving, setSaving] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => {
-    loadServers()
-  }, [])
-
-  async function loadServers() {
+  const loadServers = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -39,7 +35,7 @@ export default function MCPRegistry() {
 
     if (!error && data) {
       setServers(
-        data.map((row: any) => ({
+        data.map((row: { id: string; server_name: string; server_url: string; status: string }) => ({
           id: row.id,
           name: row.server_name,
           url: row.server_url,
@@ -48,7 +44,11 @@ export default function MCPRegistry() {
       )
     }
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    loadServers()
+  }, [loadServers])
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
