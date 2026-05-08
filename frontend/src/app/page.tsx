@@ -19,7 +19,7 @@ export default function Home() {
     })
   }, [])
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, append, status } = useChat({
     api: '/api/chat',
     headers: {
       'x-llm-settings': JSON.stringify({ provider, baseUrl, defaultModel }),
@@ -66,7 +66,7 @@ export default function Home() {
       <div className="fixed bottom-0 flex w-full justify-center bg-gradient-to-t from-zinc-50 via-zinc-50 to-transparent px-4 pb-8 pt-6 dark:from-black dark:via-black">
         <div className="w-full flex justify-center">
           <ChatInput 
-            onSubmit={(val) => sendMessage({ content: val })} 
+            onSubmit={(val) => append({ role: 'user', content: val })} 
             isLoading={status === 'submitted'} 
           />
         </div>
