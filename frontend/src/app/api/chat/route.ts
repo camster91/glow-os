@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const llmSettings = req.headers.get("x-llm-settings") || "{}";
 
   try {
-    const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8000";
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
     const response = await fetch(`${backendUrl}/api/chat`, {
       method: "POST",
       headers: { 
