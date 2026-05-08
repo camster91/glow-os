@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { Check, Edit2, Save } from "lucide-react"
+import { Check } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 interface TaskListProps {
   tasks: string[]
@@ -7,6 +8,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks: initialTasks }: TaskListProps) {
   const [tasks, setTasks] = useState(initialTasks.map(t => ({ text: t, done: false })))
+  const t = useTranslations()
 
   const toggleTask = (index: number) => {
     const newTasks = [...tasks]
@@ -17,7 +19,7 @@ export function TaskList({ tasks: initialTasks }: TaskListProps) {
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm my-4 w-full max-w-sm">
       <h3 className="font-bold mb-4 dark:text-white flex items-center gap-2">
-        <Check className="w-5 h-5 text-blue-500" /> Action Items
+        <Check className="w-5 h-5 text-blue-500" /> {t("widgets.taskList.title")}
       </h3>
       <ul className="flex flex-col gap-3">
         {tasks.map((t, i) => (

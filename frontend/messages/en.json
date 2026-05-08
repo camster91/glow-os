@@ -1,0 +1,67 @@
+{
+  "common": {
+    "appName": "GlowOS",
+    "save": "Save Preferences",
+    "saving": "Saving…",
+    "add": "Add"
+  },
+  "home": {
+    "greeting": "Hello! I am GlowOS. How can I assist you today?",
+    "placeholder": "Ask GlowOS…",
+    "title": "GlowOS",
+    "description": "Your AI-powered second brain"
+  },
+  "chat": {
+    "you": "You",
+    "assistant": "GlowOS"
+  },
+  "login": {
+    "title": "Access GlowOS",
+    "subtitle": "Log in to your second brain.",
+    "emailPlaceholder": "Email Address",
+    "passwordPlaceholder": "Password",
+    "logIn": "Log In",
+    "signUp": "Sign Up",
+    "checkEmail": "Check your email for the confirmation link!"
+  },
+  "settings": {
+    "llm": {
+      "title": "LLM Configuration",
+      "description": "Configure your AI provider (BYOM). Supports OpenAI, Anthropic, or Ollama Cloud.",
+      "provider": "Provider",
+      "providerOpenAI": "OpenAI (or Compatible API)",
+      "providerAnthropic": "Anthropic",
+      "providerOllama": "Ollama (Local/Cloud)",
+      "baseUrl": "Base URL (For Ollama Cloud or Custom Endpoints)",
+      "baseUrlPlaceholder": "https://api.openai.com/v1",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "sk-...",
+      "leaveBlank": "Leave blank to keep existing key",
+      "defaultModel": "Default Model",
+      "defaultModelPlaceholder": "gpt-4o-mini",
+      "notAuthenticated": "Not authenticated",
+      "savedSuccess": "Settings saved securely!",
+      "saveFailed": "Failed to save",
+      "backendUnreachable": "Could not reach the backend"
+    },
+    "mcp": {
+      "title": "MCP Registry",
+      "description": "Connect external tools and mini-apps to your GlowOS instance.",
+      "addServer": "Add New Server",
+      "serverNamePlaceholder": "Server Name (e.g. Gmail)",
+      "serverUrlPlaceholder": "Server URL",
+      "connectedServers": "Connected Servers",
+      "noServers": "No servers configured yet.",
+      "active": "Active"
+    }
+  },
+  "widgets": {
+    "taskList": {
+      "title": "Action Items"
+    }
+  },
+  "metadata": {
+    "title": "GlowOS",
+    "description": "Your AI-powered second brain"
+  }
+}

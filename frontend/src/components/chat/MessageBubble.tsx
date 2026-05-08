@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { Bot, User } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 interface MessageBubbleProps {
   role: "user" | "assistant" | "system"
@@ -8,6 +9,7 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ role, content }: MessageBubbleProps) {
   const isUser = role === "user"
+  const t = useTranslations()
 
   return (
     <div className={cn("group flex w-full py-4", isUser ? "justify-end" : "justify-start")}>
@@ -23,7 +25,7 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
         
         <div className="flex flex-col gap-1">
           <div className={cn("font-medium text-sm text-zinc-500", isUser ? "text-right" : "text-left")}>
-            {isUser ? "You" : "GlowOS"}
+            {isUser ? t("chat.you") : t("chat.assistant")}
           </div>
           <div
             className={cn(
