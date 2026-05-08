@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Plus, Server, Trash2, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { getUserFromSession } from "@/lib/supabase/server"
 
 interface MCPServer {
   id: string
@@ -26,7 +25,7 @@ export default function MCPRegistry() {
 
   async function loadServers() {
     setLoading(true)
-    const user = await getUserFromSession()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       setLoading(false)
       return
@@ -55,7 +54,7 @@ export default function MCPRegistry() {
     e.preventDefault()
     if (!newName || !newUrl) return
 
-    const user = await getUserFromSession()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     setSaving(true)
