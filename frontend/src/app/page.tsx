@@ -8,14 +8,18 @@ import { NoteCard } from "@/components/widgets/NoteCard"
 import { useSettingsStore } from "@/store/settings"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect } from "react"
+import { useTranslations } from "next-intl"
 
 export default function Home() {
   const { provider, apiKey, baseUrl, defaultModel } = useSettingsStore()
   const supabase = createClient()
+  const t = useTranslations()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) console.log("User:", data.user.id)
+      if (data.user) {
+        // User authenticated silently
+      }
     })
   }, [])
 
@@ -31,7 +35,7 @@ export default function Home() {
       <div className="flex w-full flex-1 flex-col items-center overflow-y-auto px-4 pb-32 pt-8">
         <div className="flex w-full max-w-3xl flex-col">
           {messages.length === 0 && (
-            <MessageBubble role="assistant" content="Hello! I am GlowOS. How can I assist you today?" />
+            <MessageBubble role="assistant" content={t("home.greeting")} />
           )}
           {messages.map((m) => {
             if (m.toolInvocations && m.toolInvocations.length > 0) {
@@ -48,7 +52,7 @@ export default function Home() {
                   const args = tool.args as { title: string, content: string }
                   return (
                     <div key={tool.toolCallId} className="w-full max-w-3xl flex justify-start ml-12">
-                      <NoteCard title={args.title || "Note"} content={args.content || ""} />
+                      <NoteCard title={args.title || ""} content={args.content || ""} />
                     </div>
                   )
                 }

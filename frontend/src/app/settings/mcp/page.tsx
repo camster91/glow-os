@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Server, Trash2, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslations } from "next-intl"
 
 interface MCPServer {
   id: string
@@ -18,6 +19,7 @@ export default function MCPRegistry() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const supabase = createClient()
+  const t = useTranslations()
 
   const loadServers = useCallback(async () => {
     setLoading(true)
@@ -96,23 +98,23 @@ export default function MCPRegistry() {
     <div className="flex flex-col items-center min-h-screen bg-zinc-50 dark:bg-black py-12 px-4">
       <div className="w-full max-w-3xl flex flex-col gap-8">
         <div>
-          <h1 className="text-3xl font-bold dark:text-white">MCP Registry</h1>
-          <p className="text-zinc-500 mt-2">Connect external tools and mini-apps to your GlowOS instance.</p>
+          <h1 className="text-3xl font-bold dark:text-white">{t("settings.mcp.title")}</h1>
+          <p className="text-zinc-500 mt-2">{t("settings.mcp.description")}</p>
         </div>
 
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4 dark:text-white">Add New Server</h2>
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">{t("settings.mcp.addServer")}</h2>
           <form onSubmit={handleAdd} className="flex gap-4">
             <input
               type="text"
-              placeholder="Server Name (e.g. Gmail)"
+              placeholder={t("settings.mcp.serverNamePlaceholder")}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-2 outline-none dark:text-white"
             />
             <input
               type="url"
-              placeholder="Server URL"
+              placeholder={t("settings.mcp.serverUrlPlaceholder")}
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
               className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-2 outline-none dark:text-white"
@@ -123,19 +125,19 @@ export default function MCPRegistry() {
               className="bg-black dark:bg-white text-white dark:text-black px-6 py-2 rounded-xl font-medium flex items-center gap-2 disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Add
+              {t("common.add")}
             </button>
           </form>
         </div>
 
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold dark:text-white">Connected Servers</h2>
+          <h2 className="text-xl font-semibold dark:text-white">{t("settings.mcp.connectedServers")}</h2>
           {loading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
             </div>
           ) : servers.length === 0 ? (
-            <p className="text-zinc-500 text-sm">No servers configured yet.</p>
+            <p className="text-zinc-500 text-sm">{t("settings.mcp.noServers")}</p>
           ) : (
             servers.map((server) => (
               <div
@@ -153,7 +155,7 @@ export default function MCPRegistry() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span> Active
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span> {t("settings.mcp.active")}
                   </span>
                   <button
                     onClick={() => handleRemove(server.id)}
