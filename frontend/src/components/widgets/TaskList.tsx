@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Check, Edit2, Save } from "lucide-react"
+import { Check } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 interface TaskListProps {

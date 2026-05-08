@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { useSettingsStore } from "@/store/settings"
 import { createClient } from "@/lib/supabase/client"
 import { Save } from "lucide-react"
-import { toast } from "sonner"
 import { useTranslations } from "next-intl"
 
 export default function LLMSettings() {
@@ -94,7 +93,7 @@ export default function LLMSettings() {
             <label className="font-medium text-sm dark:text-zinc-300">{t("settings.llm.provider")}</label>
             <select
               value={provider}
-              onChange={(e) => setSettings({ provider: e.target.value as any })}
+              onChange={(e) => setSettings({ provider: e.target.value as "openai" | "anthropic" | "ollama" })}
               className="bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 outline-none dark:text-white"
             >
               <option value="openai">{t("settings.llm.providerOpenAI")}</option>

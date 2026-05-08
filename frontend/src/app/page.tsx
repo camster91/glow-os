@@ -11,7 +11,7 @@ import { useEffect } from "react"
 import { useTranslations } from "next-intl"
 
 export default function Home() {
-  const { provider, apiKey, baseUrl, defaultModel } = useSettingsStore()
+  const { provider, baseUrl, defaultModel } = useSettingsStore()
   const supabase = createClient()
   const t = useTranslations()
 
@@ -60,7 +60,7 @@ export default function Home() {
               })
             }
             if (m.content) {
-              return <MessageBubble key={m.id} role={m.role as any} content={m.content} />
+              return <MessageBubble key={m.id} role={m.role} content={m.content} />
             }
             return null;
           })}
