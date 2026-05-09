@@ -59,7 +59,7 @@ export default function Home() {
                 return null;
               })
             }
-            if (m.content) {
+            if (m.content && m.role !== 'data') {
               return <MessageBubble key={m.id} role={m.role} content={m.content} />
             }
             return null;
