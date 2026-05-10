@@ -21,6 +21,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - glowos-network
+      - coolify
 
   frontend:
     build:
@@ -41,7 +44,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - glowos-network
+      - coolify
 
 networks:
   default:
     name: glowos-network
+  coolify:
+    external: true
