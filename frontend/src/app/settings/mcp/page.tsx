@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Server, Trash2, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useTranslations } from "next-intl"
@@ -21,36 +21,33 @@ export default function MCPRegistry() {
   const supabase = createClient()
   const t = useTranslations()
 
-  const loadServers = useCallback(async () => {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setLoading(false)
-      return
-    }
-
-    const { data, error } = await supabase
-      .from("mcp_registry")
-      .select("id, server_name, server_url, status")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-
-    if (!error && data) {
-      setServers(
-        data.map((row: { id: string; server_name: string; server_url: string; status: string }) => ({
-          id: row.id,
-          name: row.server_name,
-          url: row.server_url,
-          status: row.status as "active" | "inactive",
-        }))
-      )
-    }
-    setLoading(false)
-  }, [supabase])
-
   useEffect(() => {
-    loadServers()
-  }, [loadServers])
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const { data, error } = await supabase
+        .from("mcp_registry")
+        .select("id, server_name, server_url, status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+
+      if (!error && data) {
+        setServers(
+          data.map((row: { id: string; server_name: string; server_url: string; status: string }) => ({
+            id: row.id,
+            name: row.server_name,
+            url: row.server_url,
+            status: row.status as "active" | "inactive",
+          }))
+        )
+      }
+      setLoading(false)
+    })()
+  }, [supabase])
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()

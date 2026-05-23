@@ -31,16 +31,15 @@ export default function LLMSettings() {
             baseUrl: data.base_url || 'https://api.openai.com/v1',
             defaultModel: data.default_model || 'gpt-4o-mini',
           })
-          // apiKey is in-memory only via setApiKey; placeholder shown in form
           setApiKey(data.api_key || '')
-          setSavedKey(data.api_key ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' : '')
+          setSavedKey(data.api_key ? '•••••••••' : '')
         }
       } catch {
         // Backend not available in dev — silently skip
       }
     }
     load()
-  }, [])
+  }, [setApiKey, setSettings, supabase.auth])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,7 +70,7 @@ export default function LLMSettings() {
       } else {
         setMessage({ type: 'error', text: `${t("settings.llm.saveFailed")} (${res.status})` })
       }
-    } catch (err) {
+    } catch {
       setMessage({ type: 'error', text: t("settings.llm.backendUnreachable") })
     }
 
