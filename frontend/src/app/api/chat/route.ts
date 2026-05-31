@@ -31,7 +31,9 @@ export async function POST(req: Request) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error communicating with backend:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error communicating with backend:", error);
+    }
     return NextResponse.json({ error: "Backend communication failed" }, { status: 500 });
   }
 }

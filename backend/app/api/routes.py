@@ -10,6 +10,15 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from ..core.db import get_supabase
 from ..core.config import settings
 from ..core.crypto import get_crypto
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+# Only show debug logs in development
+if os.getenv("ENV", "production") == "development":
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.WARNING)
 
 # Separate limiters for different endpoint groups
 chat_limiter = Limiter(key_func=get_remote_address)
@@ -52,7 +61,7 @@ async def verify_supabase_token(token: str) -> dict | None:
                 return response.json()
             return None
     except Exception as e:
-        print(f"Token verification failed: {e}")
+        logger.warning(f"Token verification failed: {e}")
         return None
 
 @router.post("/chat")
@@ -89,7 +98,7 @@ async def chat_endpoint(
             if prefs:
                 llm_settings = prefs
         except Exception as e:
-            print(f"Failed to fetch LLM preferences: {e}")
+            logger.warning(f"Failed to fetch LLM preferences: {e}")
             # Fall back to header-supplied settings if DB fetch fails
             settings_str = request.headers.get("x-llm-settings", "{}")
             try:
