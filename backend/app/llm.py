@@ -23,7 +23,7 @@ def get_llm(settings: Optional[dict] = None) -> ChatOpenAI:
             result = sb.table("encrypted_vault").select("encrypted_key","service").execute()
             for row in (result.data or []):
                 if row.get("service") == "openai":
-                    key = _decrypt(row["encrypted_key"], cfg.CRYPT_SECRET or "")
+                    key = _decrypt(row["encrypted_key"], cfg.CRYPT_SECRET)
                     logger.info("LLM: using encrypted vault key")
                     return ChatOpenAI(model="gpt-4o-mini", api_key=key)
     except Exception as e:

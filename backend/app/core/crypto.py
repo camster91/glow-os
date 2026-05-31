@@ -24,22 +24,23 @@ class CryptoService:
     def __init__(self, secret: Optional[str] = None):
         raw = secret or settings.CRYPT_SECRET
         if not raw:
-            # TODO(cam): Set CRYPT_SECRET env var in production.
-            # Fall back to a zeroed key — keys will be unreadable until a real secret is set.
-            raw = ""
+            raise ValueError(
+                'CRYPT_SECRET environment variable is required. '
+                'Set a secure random secret (e.g. openssl rand -hex 32) and never use a hardcoded fallback.'
+            )
         self._key: bytes = hashlib.sha256(raw.encode()).digest()
         self._aesgcm = AESGCM(self._key)
 
-    def _get_nonce(self, sanitized_key: str) -> bytes:
-        """Derive a deterministic 12-byte nonce from the (sanitized) key string."""
-        return hashlib.sha256(sanitized_key.encode()).digest()[:12]
+    def _get_nonce(self) -> bytes:
+        """Generate a cryptographically random 12-byte nonce."""
+        return os.urandom(12)
 
     def encrypt(self, plaintext: str) -> str:
         """
         Encrypt a plaintext string. Returns a base64-encoded JSON blob:
         {"v": 1, "nonce": "<base64>", "ct": "<base64>"}
         """
-        nonce = self._get_nonce(plaintext)
+        nonce = self._get_nonce()
         ct = self._aesgcm.encrypt(nonce, plaintext.encode(), None)
         return base64.b64encode(
             json.dumps({"v": 1, "nonce": base64.b64encode(nonce).decode(), "ct": base64.b64encode(ct).decode()}).encode()

@@ -166,7 +166,7 @@ User message: {last_message}
             content = "I can't reach the database to list your tasks."
 
     elif action == "update":
-        # Mark tasks as complete/incomplete based on keywords in message
+        # Mark a specific task as complete/incomplete based on keywords in message
         if supabase and user_id:
             try:
                 # Simple heuristic: "done" / "complete" / "finished" = complete
@@ -175,18 +175,43 @@ User message: {last_message}
                 incomplete = any(k in lower for k in ["undone", "incomplete", "reopen", "mark incomplete"])
 
                 if completed or incomplete:
-                    # Try to find the task by title if mentioned
-                    supabase.table("tasks").update({
-                        "completed": completed
-                    }).eq("user_id", user_id).execute()
-                    status = "completed" if completed else "reopened"
-                    content = f"Task marked as {status}."
+                    # Try to find the task title from the message to scope the update
+                    task_title = None
+                    
+                    # First, try to find quoted task title
+                    for quote in ["'", '"']:
+                        if quote in last_message:
+                            parts = last_message.split(quote)
+                            if len(parts) >= 3:
+                                task_title = parts[1].strip()
+                                break
+                    
+                    # If no quoted text, try to extract after "mark" keyword
+                    if not task_title:
+                        for kw in ["mark complete", "mark done", "mark incomplete", "mark undone"]:
+                            if kw in lower:
+                                after = lower.split(kw, 1)
+                                if len(after) > 1:
+                                    candidate = after[1].strip().strip('"\'.,!? ')
+                                    if candidate:
+                                        task_title = candidate
+                                        break
+
+                    if task_title:
+                        # Update only the specific task matching the title
+                        supabase.table("tasks").update({
+                            "completed": completed
+                        }).eq("user_id", user_id).eq("title", task_title).execute()
+                        status = "completed" if completed else "reopened"
+                        content = f"Task \"{task_title}\" marked as {status}."
+                    else:
+                        content = "I couldn\'t determine which task to update. Try saying \'mark [task] as done\' or \'mark [task] as incomplete\'."
                 else:
-                    content = "I couldn't determine which task to update. Try saying 'mark [task] as done' or 'mark [task] as incomplete'."
+                    content = "I couldn\'t determine which task to update. Try saying \'mark [task] as done\' or \'mark [task] as incomplete\'."
             except Exception:
                 content = "I had trouble updating your task."
         else:
-            content = "I can't reach the database to update your task."
+            content = "I can\'t reach the database to update your task."
 
     elif action == "delete":
         # Delete a task by title if mentioned
